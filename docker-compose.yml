@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Frontend service (Next.js with Phaser)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SOCKET_URL=http://${VPS_IP}:3001
+    depends_on:
+      - backend
+    networks:
+      - td-network
+
+  # Backend service (Node.js with Express and Socket.io)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SOCKET_PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/tower-defense
+    depends_on:
+      - mongodb
+    networks:
+      - td-network
+
+  # MongoDB service
+  mongodb:
+    image: mongo:latest
+    restart: always
+    volumes:
+      - "../files/mongodb_data:/data/db"
+    ports:
+      - "27017:27017"
+    networks:
+      - td-network
+
+networks:
+  td-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+    external: false
